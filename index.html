@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROBOMATCH - Generator Pairing & Heat Perlombaan Robot</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        corner: {
+                            red: '#ef4444',
+                            redDark: '#991b1b',
+                            blue: '#3b82f6',
+                            blueDark: '#1e40af',
+                        }
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(99, 102, 241, 0.4)' },
+                            '50%': { boxShadow: '0 0 30px rgba(99, 102, 241, 0.8)' },
+                        },
+                        shuffle: {
+                            '0%': { transform: 'translateY(0) scale(1)' },
+                            '50%': { transform: 'translateY(-6px) scale(1.02)' },
+                            '100%': { transform: 'translateY(0) scale(1)' },
+                        }
+                    },
+                    animation: {
+                        pulseGlow: 'pulseGlow 3s infinite',
+                        shuffle: 'shuffle 0.2s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- SheetJS CDN for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+        
+        /* Print Styles */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .print-container {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .card-match {
+                break-inside: avoid;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+                background: white !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Glow Accent -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-48 bg-gradient-to-r from-cyan-500/10 via-indigo-500/20 to-purple-500/10 blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid font-bold fa-robot text-xl text-white"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+                            ROBOMATCH
+                        </h1>
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            v1.2 PRO
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-400">Generator Pairing & Match Heat Perlombaan Robot</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Theme Toggle or Status indicator -->
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="currentDateDisplay">--:--</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 print-container">
+        
+        <!-- Top Banner / Quick Info -->
+        <div class="no-print bg-gradient-to-r from-indigo-950/60 via-slate-900/80 to-slate-900/60 border border-indigo-500/20 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+            <div class="space-y-1">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i> Sistem Pengacak Pasangan Tanding Robot
+                </h2>
+                <p class="text-sm text-slate-300">
+                    Masukkan nama tim (satu tim per baris). Sistem secara otomatis mengacak sudut merah vs sudut biru dan memberikan status <span class="text-amber-400 font-semibold">"Auto-Advance / BYE"</span> jika jumlah peserta ganjil.
+                </p>
+            </div>
+            <!-- Preset Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs text-slate-400 w-full sm:w-auto font-medium">Tim Contoh:</span>
+                <button onclick="loadSamplePreset(8)" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition active:scale-95">
+                    <i class="fa-solid fa-users text-xs mr-1"></i> 8 Tim (Genap)
+                </button>
+                <button onclick="loadSamplePreset(9)" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition active:scale-95">
+                    <i class="fa-solid fa-user-plus text-xs mr-1"></i> 9 Tim (Ganjil)
+                </button>
+                <button onclick="loadSamplePreset(16)" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition active:scale-95">
+                    <i class="fa-solid fa-ranking-star text-xs mr-1"></i> 16 Tim
+                </button>
+            </div>
+        </div>
+
+        <!-- Layout Grid: Left (Input Panel) | Right (Output Panel) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT PANEL: Input & Settings (5 Cols) -->
+            <div class="lg:col-span-5 flex flex-col gap-5 no-print">
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+                    
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-indigo-400"></i>
+                            <h3 class="font-bold text-white">Daftar Tim Peserta</h3>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <span id="badgeTotalTeams" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono font-semibold border border-slate-700">
+                                0 Tim
+                            </span>
+                            <button onclick="clearTeamInput()" title="Bersihkan input" class="text-slate-400 hover:text-red-400 p-1 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Textarea -->
+                    <div class="relative">
+                        <textarea id="teamsInput" rows="11" 
+                            placeholder="Masukkan nama tim di sini (satu nama tim per baris)...&#10;Contoh:&#10;RoboTech Alpha&#10;Mecha Force 01&#10;Cyber Valkyrie&#10;Iron Claws" 
+                            class="w-full bg-slate-950 border border-slate-700/80 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 rounded-xl p-3.5 text-sm font-mono text-slate-100 placeholder-slate-500 transition resize-y focus:outline-none"></textarea>
+                        <div class="absolute bottom-3 right-3 text-xs text-slate-500 pointer-events-none font-mono" id="lineCounter">
+                            0 Baris
+                        </div>
+                    </div>
+
+                    <!-- Additional Options Accordion / Controls -->
+                    <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                            <span><i class="fa-solid fa-sliders text-indigo-400 mr-1"></i> Pengaturan Tambahan</span>
+                        </div>
+                        
+                        <!-- Custom BYE Label -->
+                        <div class="grid grid-cols-1 gap-2">
+                            <label for="byeLabelInput" class="text-xs text-slate-300 font-medium">Label Status Ganjil / BYE:</label>
+                            <input type="text" id="byeLabelInput" value="Auto-Advance / BYE" 
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+                        </div>
+
+                        <!-- Arena Prefix -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="arenaNameInput" class="text-xs text-slate-300 font-medium">Nama Arena / Heat:</label>
+                                <input type="text" id="arenaNameInput" value="Match" 
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label for="sortModeSelect" class="text-xs text-slate-300 font-medium">Mode Random:</label>
+                                <select id="sortModeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none">
+                                    <option value="full_random">Acak Murni (Full Shuffle)</option>
+                                    <option value="seed">Acak Stabil</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Filter Options -->
+                        <div class="flex items-center gap-4 text-xs text-slate-300 pt-1">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="chkFilterDupes" checked class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-900">
+                                <span>Hapus Duplikat</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="chkTrim" checked class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-900">
+                                <span>Hapus Spasi Kosong</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-1 gap-2 pt-1">
+                        <button id="btnRandomize" onclick="randomizePairing(true)" 
+                            class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all duration-200 flex items-center justify-center gap-2 group active:scale-[0.98]">
+                            <i class="fa-solid fa-dice text-lg group-hover:rotate-180 transition-transform duration-500"></i>
+                            <span>ACAK PAIRING</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Match Results & Export Controls (7 Cols) -->
+            <div class="lg:col-span-7 flex flex-col gap-5">
+                
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-5 min-h-[500px]">
+                    
+                    <!-- Results Header & Toolbar -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                        <div>
+                            <h3 class="font-bold text-white text-base flex items-center gap-2">
+                                <i class="fa-solid fa-diagram-project text-cyan-400"></i>
+                                <span>Jadwal & Hasil Pairing</span>
+                            </h3>
+                            <p class="text-xs text-slate-400" id="summaryStats">Belum ada pairing yang dibuat</p>
+                        </div>
+
+                        <!-- View Toggle & Export Actions -->
+                        <div class="flex items-center flex-wrap gap-2 no-print">
+                            <!-- View Switches -->
+                            <div class="bg-slate-950 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
+                                <button id="btnViewCards" onclick="switchView('cards')" title="Tampilan Kartu Corner"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white shadow">
+                                    <i class="fa-solid fa-border-all mr-1"></i> Kartu
+                                </button>
+                                <button id="btnViewTable" onclick="switchView('table')" title="Tampilan Tabel Heat"
+                                    class="px-2.5 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-slate-200">
+                                    <i class="fa-solid fa-table-list mr-1"></i> Tabel
+                                </button>
+                            </div>
+
+                            <!-- Actions -->
+                            <button onclick="copyToClipboard()" title="Salin Jadwal Teks"
+                                class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition active:scale-95 flex items-center gap-1.5">
+                                <i class="fa-solid fa-copy"></i>
+                                <span class="hidden sm:inline">Salin</span>
+                            </button>
+
+                            <button onclick="exportToExcel()" title="Ekspor ke File Excel (.xlsx)"
+                                class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 transition active:scale-95 flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span class="hidden sm:inline">Excel</span>
+                            </button>
+
+                            <button onclick="window.print()" title="Cetak atau Simpan PDF"
+                                class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition active:scale-95 flex items-center gap-1.5">
+                                <i class="fa-solid fa-print"></i>
+                                <span class="hidden sm:inline">Cetak</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Odd Team Banner (Dynamic) -->
+                    <div id="oddNoticeBanner" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-300 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
+                            <span>Jumlah peserta ganjil! Tim <strong><span id="oddTeamName">--</span></strong> mendapatkan status <strong class="underline" id="oddNoticeBadge">Auto-Advance / BYE</strong>.</span>
+                        </div>
+                    </div>
+
+                    <!-- Container for Output Results -->
+                    <div id="resultsContainer" class="flex-1 flex flex-col">
+                        
+                        <!-- Empty State -->
+                        <div id="emptyState" class="flex-1 flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-800 rounded-xl">
+                            <div class="w-16 h-16 rounded-2xl bg-slate-800/80 flex items-center justify-center text-slate-600 text-2xl mb-3">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-300 text-sm">Belum Ada Data Pairing</h4>
+                            <p class="text-xs text-slate-500 max-w-sm mt-1">
+                                Masukkan nama tim pada panel di sebelah kiri dan klik tombol <strong>"ACAK PAIRING"</strong> untuk melihat hasil tanding.
+                            </p>
+                        </div>
+
+                        <!-- CARDS VIEW CONTAINER -->
+                        <div id="cardsView" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                            <!-- Match Cards render here via JS -->
+                        </div>
+
+                        <!-- TABLE VIEW CONTAINER -->
+                        <div id="tableView" class="overflow-x-auto hidden">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                                        <th class="py-3 px-3 font-semibold text-center w-16">No</th>
+                                        <th class="py-3 px-3 font-semibold text-red-400 border-l border-slate-800">
+                                            <i class="fa-solid fa-flag text-xs mr-1"></i> Sudut Merah (Red)
+                                        </th>
+                                        <th class="py-3 px-3 font-semibold text-center w-12">VS</th>
+                                        <th class="py-3 px-3 font-semibold text-blue-400 border-r border-slate-800">
+                                            <i class="fa-solid fa-flag text-xs mr-1"></i> Sudut Biru (Blue)
+                                        </th>
+                                        <th class="py-3 px-3 font-semibold text-center w-28">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tableBody" class="divide-y divide-slate-800/80">
+                                    <!-- Table Rows render here via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-4 mt-8 bg-slate-950 no-print text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>&copy; <span id="yearDisplay"></span> ROBOMATCH - Competition Matchmaker</span>
+            <span class="text-slate-600">Didesain khusus untuk Turnamen & Kontes Robot Indonesia</span>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 ease-in-out pointer-events-none">
+        <div id="toastContent" class="bg-slate-800 text-white border border-slate-700 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs font-semibold">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toastMessage">Pesan Toast</span>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Global Application State
+        let currentPairs = [];
+        let oddTeam = null;
+        let activeView = 'cards'; // 'cards' | 'table'
+
+        // Sample Presets
+        const samplePresets = {
+            8: [
+                "RoboTech Alpha",
+                "Mecha Force 01",
+                "Cyber Valkyrie",
+                "Iron Claws",
+                "Thunderbot X",
+                "Titanium Core",
+                "Vortex Spinner",
+                "Aero Striker"
+            ],
+            9: [
+                "RoboTech Alpha",
+                "Mecha Force 01",
+                "Cyber Valkyrie",
+                "Iron Claws",
+                "Thunderbot X",
+                "Titanium Core",
+                "Vortex Spinner",
+                "Aero Striker",
+                "Garuda Autonomous"
+            ],
+            16: [
+                "RoboTech Alpha",
+                "Mecha Force 01",
+                "Cyber Valkyrie",
+                "Iron Claws",
+                "Thunderbot X",
+                "Titanium Core",
+                "Vortex Spinner",
+                "Aero Striker",
+                "Garuda Autonomous",
+                "Hydra Striker",
+                "Nexus Prime",
+                "Phantom Racer",
+                "Quantum Breaker",
+                "Shadow Runner",
+                "Vector Pulse",
+                "Zenith Rover"
+            ]
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            // Update Clock & Year
+            updateClock();
+            setInterval(updateClock, 1000);
+            document.getElementById('yearDisplay').innerText = new Date().getFullYear();
+
+            // Load persisted team list if exists
+            const savedInput = localStorage.getItem('robomatch_teams');
+            if (savedInput) {
+                document.getElementById('teamsInput').value = savedInput;
+            } else {
+                // Default preset 9 teams (shows odd handling)
+                loadSamplePreset(9);
+            }
+            
+            updateLineCounter();
+
+            // Event Listeners
+            document.getElementById('teamsInput').addEventListener('input', () => {
+                updateLineCounter();
+                saveToLocalStorage();
+            });
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentDateDisplay').innerText = `${dateStr} - ${timeStr}`;
+        }
+
+        function updateLineCounter() {
+            const text = document.getElementById('teamsInput').value;
+            const teams = parseTeamsInput(text);
+            document.getElementById('badgeTotalTeams').innerText = `${teams.length} Tim`;
+            document.getElementById('lineCounter').innerText = `${teams.length} Tim Terdeteksi`;
+        }
+
+        function saveToLocalStorage() {
+            const text = document.getElementById('teamsInput').value;
+            localStorage.setItem('robomatch_teams', text);
+        }
+
+        function clearTeamInput() {
+            document.getElementById('teamsInput').value = '';
+            updateLineCounter();
+            saveToLocalStorage();
+            showToast('Daftar tim telah dibersihkan', 'info');
+        }
+
+        function loadSamplePreset(count) {
+            if (samplePresets[count]) {
+                document.getElementById('teamsInput').value = samplePresets[count].join('\n');
+                updateLineCounter();
+                saveToLocalStorage();
+                randomizePairing(true);
+                showToast(`Memuat ${count} contoh tim`, 'success');
+            }
+        }
+
+        function parseTeamsInput(rawText) {
+            const chkTrim = document.getElementById('chkTrim').checked;
+            const chkFilterDupes = document.getElementById('chkFilterDupes').checked;
+
+            let lines = rawText.split('\n');
+
+            if (chkTrim) {
+                lines = lines.map(line => line.trim()).filter(line => line.length > 0);
+            } else {
+                lines = lines.filter(line => line.length > 0);
+            }
+
+            if (chkFilterDupes) {
+                const unique = [];
+                const seen = new Set();
+                for (let item of lines) {
+                    const key = item.toLowerCase();
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        unique.push(item);
+                    }
+                }
+                lines = unique;
+            }
+
+            return lines;
+        }
+
+        // Fisher-Yates Shuffle Algorithm
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function randomizePairing(animate = true) {
+            const rawText = document.getElementById('teamsInput').value;
+            const teams = parseTeamsInput(rawText);
+
+            if (teams.length < 2) {
+                showToast('Masukkan minimal 2 tim untuk membuat pairing!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnRandomize');
+            
+            if (animate) {
+                btn.classList.add('animate-shuffle');
+                btn.disabled = true;
+            }
+
+            setTimeout(() => {
+                const shuffled = shuffleArray(teams);
+                const arenaPrefix = document.getElementById('arenaNameInput').value.trim() || 'Match';
+                const byeLabel = document.getElementById('byeLabelInput').value.trim() || 'Auto-Advance / BYE';
+
+                currentPairs = [];
+                oddTeam = null;
+
+                const isOdd = shuffled.length % 2 !== 0;
+                const totalPairs = Math.floor(shuffled.length / 2);
+
+                for (let i = 0; i < totalPairs; i++) {
+                    currentPairs.push({
+                        matchNumber: i + 1,
+                        matchCode: `${arenaPrefix} ${i + 1}`,
+                        redCorner: shuffled[i * 2],
+                        blueCorner: shuffled[i * 2 + 1],
+                        status: 'Tanding'
+                    });
+                }
+
+                if (isOdd) {
+                    oddTeam = shuffled[shuffled.length - 1];
+                }
+
+                renderResults(byeLabel);
+
+                if (animate) {
+                    btn.classList.remove('animate-shuffle');
+                    btn.disabled = false;
+                    showToast(`Berhasil mengacak ${currentPairs.length} pertandingan!`, 'success');
+                }
+            }, animate ? 300 : 0);
+        }
+
+        function renderResults(byeLabel = 'Auto-Advance / BYE') {
+            const emptyState = document.getElementById('emptyState');
+            const cardsView = document.getElementById('cardsView');
+            const tableView = document.getElementById('tableView');
+            const oddBanner = document.getElementById('oddNoticeBanner');
+            const summaryStats = document.getElementById('summaryStats');
+
+            emptyState.classList.add('hidden');
+
+            // Summary Stats Text
+            const totalTeams = (currentPairs.length * 2) + (oddTeam ? 1 : 0);
+            summaryStats.innerHTML = `Total: <strong class="text-indigo-400">${totalTeams} Tim</strong> | <strong class="text-cyan-400">${currentPairs.length} Match</strong> ${oddTeam ? `| <span class="text-amber-400 font-semibold">1 BYE</span>` : ''}`;
+
+            // Odd Team Banner
+            if (oddTeam) {
+                oddBanner.classList.remove('hidden');
+                document.getElementById('oddTeamName').innerText = oddTeam;
+                document.getElementById('oddNoticeBadge').innerText = byeLabel;
+            } else {
+                oddBanner.classList.add('hidden');
+            }
+
+            // Render Cards View
+            cardsView.innerHTML = '';
+            currentPairs.forEach((pair) => {
+                const card = document.createElement('div');
+                card.className = "card-match bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-xl overflow-hidden shadow-lg transition-all hover:scale-[1.01]";
+                card.innerHTML = `
+                    <div class="bg-slate-900/90 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between">
+                        <span class="font-mono text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-gamepad text-indigo-500"></i> ${pair.matchCode}
+                        </span>
+                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            ${pair.status}
+                        </span>
+                    </div>
+                    <div class="p-3.5 space-y-2.5">
+                        <!-- Red Corner -->
+                        <div class="flex items-center justify-between p-2.5 rounded-lg bg-red-950/20 border border-red-900/30">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500"></span>
+                                <span class="font-bold text-xs text-red-200">Red Corner</span>
+                            </div>
+                            <span class="font-semibold text-xs text-white truncate max-w-[170px] text-right" title="${pair.redCorner}">
+                                ${pair.redCorner}
+                            </span>
+                        </div>
+                        
+                        <!-- VS Divider -->
+                        <div class="text-center text-[10px] font-extrabold text-slate-500 tracking-wider">
+                            — VS —
+                        </div>
+
+                        <!-- Blue Corner -->
+                        <div class="flex items-center justify-between p-2.5 rounded-lg bg-blue-950/20 border border-blue-900/30">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></span>
+                                <span class="font-bold text-xs text-blue-200">Blue Corner</span>
+                            </div>
+                            <span class="font-semibold text-xs text-white truncate max-w-[170px] text-right" title="${pair.blueCorner}">
+                                ${pair.blueCorner}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                cardsView.appendChild(card);
+            });
+
+            // If Odd Team exists, render BYE Card
+            if (oddTeam) {
+                const byeCard = document.createElement('div');
+                byeCard.className = "card-match bg-slate-950 border border-amber-500/40 rounded-xl overflow-hidden shadow-lg relative";
+                byeCard.innerHTML = `
+                    <div class="bg-amber-500/10 px-3.5 py-2 border-b border-amber-500/20 flex items-center justify-between">
+                        <span class="font-mono text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-crown text-amber-400"></i> Auto-Advance Slot
+                        </span>
+                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            ${byeLabel}
+                        </span>
+                    </div>
+                    <div class="p-4 flex flex-col items-center justify-center text-center gap-2">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-shield-cat"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-400">Tim Lolos Otomatis:</div>
+                            <div class="text-sm font-extrabold text-white mt-0.5">${oddTeam}</div>
+                        </div>
+                    </div>
+                `;
+                cardsView.appendChild(byeCard);
+            }
+
+            // Render Table View
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            currentPairs.forEach((pair) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/60 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-mono font-bold text-slate-300 text-center">${pair.matchCode}</td>
+                    <td class="py-3 px-3 font-semibold text-slate-100 border-l border-slate-800">
+                        <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                        ${pair.redCorner}
+                    </td>
+                    <td class="py-3 px-3 font-mono text-slate-500 text-center font-extrabold text-[10px]">VS</td>
+                    <td class="py-3 px-3 font-semibold text-slate-100 border-r border-slate-800">
+                        <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                        ${pair.blueCorner}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700">
+                            ${pair.status}
+                        </span>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            if (oddTeam) {
+                const trOdd = document.createElement('tr');
+                trOdd.className = "bg-amber-500/5 hover:bg-amber-500/10 transition";
+                trOdd.innerHTML = `
+                    <td class="py-3 px-3 font-mono font-bold text-amber-400 text-center">BYE</td>
+                    <td class="py-3 px-3 font-semibold text-amber-200 border-l border-slate-800" colspan="3">
+                        <span class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
+                        ${oddTeam}
+                    </td>
+                    <td class="py-3 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            ${byeLabel}
+                        </span>
+                    </td>
+                `;
+                tableBody.appendChild(trOdd);
+            }
+
+            // Ensure active view is visible
+            switchView(activeView);
+        }
+
+        function switchView(view) {
+            activeView = view;
+            const cardsView = document.getElementById('cardsView');
+            const tableView = document.getElementById('tableView');
+            const btnCards = document.getElementById('btnViewCards');
+            const btnTable = document.getElementById('btnViewTable');
+
+            if (view === 'cards') {
+                cardsView.classList.remove('hidden');
+                tableView.classList.add('hidden');
+
+                btnCards.className = "px-2.5 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white shadow";
+                btnTable.className = "px-2.5 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-slate-200";
+            } else {
+                cardsView.classList.add('hidden');
+                tableView.classList.remove('hidden');
+
+                btnTable.className = "px-2.5 py-1 text-xs font-semibold rounded-md bg-indigo-600 text-white shadow";
+                btnCards.className = "px-2.5 py-1 text-xs font-semibold rounded-md text-slate-400 hover:text-slate-200";
+            }
+        }
+
+        // Copy Formatted Text to Clipboard
+        function copyToClipboard() {
+            if (currentPairs.length === 0 && !oddTeam) {
+                showToast('Tidak ada data pairing untuk disalin!', 'error');
+                return;
+            }
+
+            let outputText = `=====================================\n`;
+            outputText += `   JADWAL PAIRING PERLOMBAAN ROBOT   \n`;
+            outputText += `=====================================\n\n`;
+
+            currentPairs.forEach((pair) => {
+                outputText += `${pair.matchCode}:\n`;
+                outputText += `  [Sudut Merah] : ${pair.redCorner}\n`;
+                outputText += `  [Sudut Biru ] : ${pair.blueCorner}\n\n`;
+            });
+
+            if (oddTeam) {
+                const byeLabel = document.getElementById('byeLabelInput').value.trim() || 'Auto-Advance / BYE';
+                outputText += `-------------------------------------\n`;
+                outputText += `TIM LOLOS OTOMATIS (${byeLabel}):\n`;
+                outputText += `  -> ${oddTeam}\n`;
+                outputText += `-------------------------------------\n`;
+            }
+
+            outputText += `\nDibuat via ROBOMATCH App`;
+
+            navigator.clipboard.writeText(outputText).then(() => {
+                showToast('Jadwal pairing berhasil disalin ke clipboard!', 'success');
+            }).catch(err => {
+                showToast('Gagal menyalin teks', 'error');
+            });
+        }
+
+        // Export Results to Excel (.xlsx) using SheetJS
+        function exportToExcel() {
+            if (currentPairs.length === 0 && !oddTeam) {
+                showToast('Tidak ada data pairing untuk diekspor!', 'error');
+                return;
+            }
+
+            try {
+                const byeLabel = document.getElementById('byeLabelInput').value.trim() || 'Auto-Advance / BYE';
+                
+                // Format Data Array for Excel
+                const excelData = [];
+
+                currentPairs.forEach((pair) => {
+                    excelData.push({
+                        "No Match": pair.matchCode,
+                        "Sudut Merah (Red Corner)": pair.redCorner,
+                        "VS": "VS",
+                        "Sudut Biru (Blue Corner)": pair.blueCorner,
+                        "Status": pair.status
+                    });
+                });
+
+                if (oddTeam) {
+                    excelData.push({
+                        "No Match": "BYE",
+                        "Sudut Merah (Red Corner)": oddTeam,
+                        "VS": "-",
+                        "Sudut Biru (Blue Corner)": "-",
+                        "Status": byeLabel
+                    });
+                }
+
+                // Create SheetJS Workbook
+                const worksheet = XLSX.utils.json_to_sheet(excelData);
+                
+                // Set Column Widths
+                worksheet['!cols'] = [
+                    { wch: 12 }, // Match Code
+                    { wch: 28 }, // Red Corner
+                    { wch: 6 },  // VS
+                    { wch: 28 }, // Blue Corner
+                    { wch: 22 }  // Status
+                ];
+
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Hasil Pairing");
+
+                // Generate File Name with Date
+                const dateStr = new Date().toISOString().slice(0, 10);
+                const fileName = `Jadwal_Pairing_Robot_${dateStr}.xlsx`;
+
+                XLSX.writeFile(workbook, fileName);
+                showToast(`File ${fileName} berhasil diunduh!`, 'success');
+
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal mengekspor file Excel', 'error');
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.innerText = message;
+
+            if (type === 'success') {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+            } else if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-circle-xmark text-red-400 text-base';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-indigo-400 text-base';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
