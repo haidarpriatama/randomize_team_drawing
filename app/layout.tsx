@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" class="dark">
+    <html lang="id" className="dark">
       <body
         className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} font-sans min-h-screen flex flex-col`}
       >
