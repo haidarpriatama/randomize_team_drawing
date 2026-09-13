@@ -287,7 +287,7 @@
                             <button onclick="exportToExcel()" title="Ekspor ke File Excel (.xlsx)"
                                 class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 transition active:scale-95 flex items-center gap-1.5">
                                 <i class="fa-solid fa-file-excel"></i>
-                                <span class="hidden sm:inline">Excel</span>
+                                <span class="hidden sm:inline">Download XLS</span>
                             </button>
 
                             <button onclick="window.print()" title="Cetak atau Simpan PDF"
@@ -295,14 +295,6 @@
                                 <i class="fa-solid fa-print"></i>
                                 <span class="hidden sm:inline">Cetak</span>
                             </button>
-                        </div>
-                    </div>
-
-                    <!-- Odd Team Banner (Dynamic) -->
-                    <div id="oddNoticeBanner" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-300 flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>
-                            <span>Jumlah peserta ganjil! Tim <strong><span id="oddTeamName">--</span></strong> mendapatkan status <strong class="underline" id="oddNoticeBadge">Auto-Advance / BYE</strong>.</span>
                         </div>
                     </div>
 
@@ -338,7 +330,6 @@
                                         <th class="py-3 px-3 font-semibold text-blue-400 border-r border-slate-800">
                                             <i class="fa-solid fa-flag text-xs mr-1"></i> Sudut Biru (Blue)
                                         </th>
-                                        <th class="py-3 px-3 font-semibold text-center w-28">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tableBody" class="divide-y divide-slate-800/80">
@@ -539,7 +530,6 @@
             setTimeout(() => {
                 const shuffled = shuffleArray(teams);
                 const arenaPrefix = document.getElementById('arenaNameInput').value.trim() || 'Match';
-                const byeLabel = document.getElementById('byeLabelInput').value.trim() || 'Auto-Advance / BYE';
 
                 currentPairs = [];
                 oddTeam = null;
@@ -558,10 +548,17 @@
                 }
 
                 if (isOdd) {
-                    oddTeam = shuffled[shuffled.length - 1];
+                    const lastTeam = shuffled[shuffled.length - 1];
+                    currentPairs.push({
+                        matchNumber: totalPairs + 1,
+                        matchCode: `${arenaPrefix} ${totalPairs + 1}`,
+                        redCorner: lastTeam,
+                        blueCorner: '',
+                        status: ''
+                    });
                 }
 
-                renderResults(byeLabel);
+                renderResults();
 
                 if (animate) {
                     btn.classList.remove('animate-shuffle');
@@ -571,99 +568,78 @@
             }, animate ? 300 : 0);
         }
 
-        function renderResults(byeLabel = 'Auto-Advance / BYE') {
+        function renderResults() {
             const emptyState = document.getElementById('emptyState');
             const cardsView = document.getElementById('cardsView');
             const tableView = document.getElementById('tableView');
-            const oddBanner = document.getElementById('oddNoticeBanner');
             const summaryStats = document.getElementById('summaryStats');
 
             emptyState.classList.add('hidden');
 
             // Summary Stats Text
-            const totalTeams = (currentPairs.length * 2) + (oddTeam ? 1 : 0);
-            summaryStats.innerHTML = `Total: <strong class="text-indigo-400">${totalTeams} Tim</strong> | <strong class="text-cyan-400">${currentPairs.length} Match</strong> ${oddTeam ? `| <span class="text-amber-400 font-semibold">1 BYE</span>` : ''}`;
-
-            // Odd Team Banner
-            if (oddTeam) {
-                oddBanner.classList.remove('hidden');
-                document.getElementById('oddTeamName').innerText = oddTeam;
-                document.getElementById('oddNoticeBadge').innerText = byeLabel;
-            } else {
-                oddBanner.classList.add('hidden');
-            }
+            summaryStats.innerHTML = `Total: <strong class="text-indigo-400">${currentPairs.length} Match</strong>`;
 
             // Render Cards View
             cardsView.innerHTML = '';
             currentPairs.forEach((pair) => {
                 const card = document.createElement('div');
                 card.className = "card-match bg-slate-950 border border-slate-800 hover:border-indigo-500/50 rounded-xl overflow-hidden shadow-lg transition-all hover:scale-[1.01]";
-                card.innerHTML = `
-                    <div class="bg-slate-900/90 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between">
-                        <span class="font-mono text-xs font-bold text-indigo-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-gamepad text-indigo-500"></i> ${pair.matchCode}
-                        </span>
-                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            ${pair.status}
-                        </span>
-                    </div>
-                    <div class="p-3.5 space-y-2.5">
-                        <!-- Red Corner -->
-                        <div class="flex items-center justify-between p-2.5 rounded-lg bg-red-950/20 border border-red-900/30">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500"></span>
-                                <span class="font-bold text-xs text-red-200">Red Corner</span>
-                            </div>
-                            <span class="font-semibold text-xs text-white truncate max-w-[170px] text-right" title="${pair.redCorner}">
-                                ${pair.redCorner}
+                
+                if (pair.blueCorner) {
+                    card.innerHTML = `
+                        <div class="bg-slate-900/90 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between">
+                            <span class="font-mono text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-gamepad text-indigo-500"></i> ${pair.matchCode}
                             </span>
                         </div>
-                        
-                        <!-- VS Divider -->
-                        <div class="text-center text-[10px] font-extrabold text-slate-500 tracking-wider">
-                            — VS —
-                        </div>
+                        <div class="p-3.5 space-y-2.5">
+                            <!-- Red Corner -->
+                            <div class="flex items-center justify-between p-2.5 rounded-lg bg-red-950/20 border border-red-900/30">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm shadow-red-500"></span>
+                                    <span class="font-bold text-xs text-red-200">Red Corner</span>
+                                </div>
+                                <span class="font-semibold text-xs text-white truncate max-w-[170px] text-right" title="${pair.redCorner}">
+                                    ${pair.redCorner}
+                                </span>
+                            </div>
+                            
+                            <!-- VS Divider -->
+                            <div class="text-center text-[10px] font-extrabold text-slate-500 tracking-wider">
+                                — VS —
+                            </div>
 
-                        <!-- Blue Corner -->
-                        <div class="flex items-center justify-between p-2.5 rounded-lg bg-blue-950/20 border border-blue-900/30">
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></span>
-                                <span class="font-bold text-xs text-blue-200">Blue Corner</span>
+                            <!-- Blue Corner -->
+                            <div class="flex items-center justify-between p-2.5 rounded-lg bg-blue-950/20 border border-blue-900/30">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm shadow-blue-500"></span>
+                                    <span class="font-bold text-xs text-blue-200">Blue Corner</span>
+                                </div>
+                                <span class="font-semibold text-xs text-white truncate max-w-[170px] text-right" title="${pair.blueCorner}">
+                                    ${pair.blueCorner}
+                                </span>
                             </div>
-                            <span class="font-semibold text-xs text-white truncate max-w-[170px] text-right" title="${pair.blueCorner}">
-                                ${pair.blueCorner}
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="bg-slate-900/90 px-3.5 py-2 border-b border-slate-800 flex items-center justify-between">
+                            <span class="font-mono text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                                <i class="fa-solid fa-gamepad text-indigo-500"></i> ${pair.matchCode}
                             </span>
                         </div>
-                    </div>
-                `;
+                        <div class="p-3.5">
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/40 border border-slate-800">
+                                <span class="font-bold text-xs text-slate-300">Tim</span>
+                                <span class="font-semibold text-xs text-white truncate max-w-[200px] text-right" title="${pair.redCorner}">
+                                    ${pair.redCorner}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
                 cardsView.appendChild(card);
             });
-
-            // If Odd Team exists, render BYE Card
-            if (oddTeam) {
-                const byeCard = document.createElement('div');
-                byeCard.className = "card-match bg-slate-950 border border-amber-500/40 rounded-xl overflow-hidden shadow-lg relative";
-                byeCard.innerHTML = `
-                    <div class="bg-amber-500/10 px-3.5 py-2 border-b border-amber-500/20 flex items-center justify-between">
-                        <span class="font-mono text-xs font-bold text-amber-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-crown text-amber-400"></i> Auto-Advance Slot
-                        </span>
-                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                            ${byeLabel}
-                        </span>
-                    </div>
-                    <div class="p-4 flex flex-col items-center justify-center text-center gap-2">
-                        <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
-                            <i class="fa-solid fa-shield-cat"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-slate-400">Tim Lolos Otomatis:</div>
-                            <div class="text-sm font-extrabold text-white mt-0.5">${oddTeam}</div>
-                        </div>
-                    </div>
-                `;
-                cardsView.appendChild(byeCard);
-            }
 
             // Render Table View
             const tableBody = document.getElementById('tableBody');
@@ -678,37 +654,13 @@
                         <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>
                         ${pair.redCorner}
                     </td>
-                    <td class="py-3 px-3 font-mono text-slate-500 text-center font-extrabold text-[10px]">VS</td>
+                    <td class="py-3 px-3 font-mono text-slate-500 text-center font-extrabold text-[10px]">${pair.blueCorner ? 'VS' : '-'}</td>
                     <td class="py-3 px-3 font-semibold text-slate-100 border-r border-slate-800">
-                        <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-                        ${pair.blueCorner}
-                    </td>
-                    <td class="py-3 px-3 text-center">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700">
-                            ${pair.status}
-                        </span>
+                        ${pair.blueCorner ? `<span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>${pair.blueCorner}` : '-'}
                     </td>
                 `;
                 tableBody.appendChild(tr);
             });
-
-            if (oddTeam) {
-                const trOdd = document.createElement('tr');
-                trOdd.className = "bg-amber-500/5 hover:bg-amber-500/10 transition";
-                trOdd.innerHTML = `
-                    <td class="py-3 px-3 font-mono font-bold text-amber-400 text-center">BYE</td>
-                    <td class="py-3 px-3 font-semibold text-amber-200 border-l border-slate-800" colspan="3">
-                        <span class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2"></span>
-                        ${oddTeam}
-                    </td>
-                    <td class="py-3 px-3 text-center">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                            ${byeLabel}
-                        </span>
-                    </td>
-                `;
-                tableBody.appendChild(trOdd);
-            }
 
             // Ensure active view is visible
             switchView(activeView);
@@ -738,7 +690,7 @@
 
         // Copy Formatted Text to Clipboard
         function copyToClipboard() {
-            if (currentPairs.length === 0 && !oddTeam) {
+            if (currentPairs.length === 0) {
                 showToast('Tidak ada data pairing untuk disalin!', 'error');
                 return;
             }
@@ -753,15 +705,7 @@
                 outputText += `  [Sudut Biru ] : ${pair.blueCorner}\n\n`;
             });
 
-            if (oddTeam) {
-                const byeLabel = document.getElementById('byeLabelInput').value.trim() || 'Auto-Advance / BYE';
-                outputText += `-------------------------------------\n`;
-                outputText += `TIM LOLOS OTOMATIS (${byeLabel}):\n`;
-                outputText += `  -> ${oddTeam}\n`;
-                outputText += `-------------------------------------\n`;
-            }
-
-            outputText += `\nDibuat via ROBOMATCH App`;
+            outputText += `Dibuat via ROBOMATCH App`;
 
             navigator.clipboard.writeText(outputText).then(() => {
                 showToast('Jadwal pairing berhasil disalin ke clipboard!', 'success');
@@ -772,14 +716,12 @@
 
         // Export Results to Excel (.xlsx) using SheetJS
         function exportToExcel() {
-            if (currentPairs.length === 0 && !oddTeam) {
+            if (currentPairs.length === 0) {
                 showToast('Tidak ada data pairing untuk diekspor!', 'error');
                 return;
             }
 
             try {
-                const byeLabel = document.getElementById('byeLabelInput').value.trim() || 'Auto-Advance / BYE';
-                
                 // Format Data Array for Excel
                 const excelData = [];
 
@@ -788,8 +730,7 @@
                         "No Match": pair.matchCode,
                         "Sudut Merah (Red Corner)": pair.redCorner,
                         "VS": "VS",
-                        "Sudut Biru (Blue Corner)": pair.blueCorner,
-                        "Status": pair.status
+                        "Sudut Biru (Blue Corner)": pair.blueCorner
                     });
                 });
 

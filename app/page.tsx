@@ -40,15 +40,24 @@ export default function Home() {
           matchCode: `Match ${i + 1}`,
           redCorner: shuffled[i * 2],
           blueCorner: shuffled[i * 2 + 1],
-          status: "Tanding",
+          status: "",
         });
       }
 
-      const oddTeam = isOdd ? shuffled[shuffled.length - 1] : null;
+      if (isOdd) {
+        const lastTeam = shuffled[shuffled.length - 1];
+        pairs.push({
+          matchNumber: totalPairsCount + 1,
+          matchCode: `Match ${totalPairsCount + 1}`,
+          redCorner: lastTeam,
+          blueCorner: "", // Single team match (tanding sendiri)
+          status: "",
+        });
+      }
 
       setPairingData({
         pairs,
-        oddTeam,
+        oddTeam: null,
         totalTeamsCount: teams.length,
       });
 
